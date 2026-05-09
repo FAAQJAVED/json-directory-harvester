@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "json-directory-harvester"
+version = "1.0.0"
+description = "Configurable, resumable harvester for JSON-based directory APIs"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.31.0",
+    "pyyaml>=6.0.1",
+    "openpyxl>=3.1.2",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+json-directory-harvester = "scraper:main"
+
+[tool.setuptools.packages.find]
+where = ["."]

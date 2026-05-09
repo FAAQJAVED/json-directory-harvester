@@ -1,0 +1,155 @@
+# =======================================================================
+# config.yaml.example — JSON Directory Harvester
+# =======================================================================
+# Copy this file to config.yaml and fill in your values.
+# NEVER commit config.yaml to version control if it contains real URLs
+# or credentials. Use .env for secrets (see .env.example).
+# =======================================================================
+
+# -----------------------------------------------------------------------
+# API SETTINGS
+# -----------------------------------------------------------------------
+api:
+  # Full URL of the directory API endpoint.
+  # Can be overridden at runtime with the SCRAPER_API_URL environment variable.
+  url: "YOUR_API_ENDPOINT_URL"
+
+  # HTTP method used by the endpoint: POST or GET
+  method: "POST"
+
+  # Request headers sent with every API call.
+  # Add or remove headers to match what your target API expects.
+  headers:
+    User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    Content-Type: "application/x-www-form-urlencoded"
+    # Replace with the page that hosts the search form (if required by the API).
+    Referer: "YOUR_REFERER_URL"
+    # Replace with the site's root domain (if required by the API).
+    Origin:  "YOUR_ORIGIN_URL"
+    # Uncomment and set if the API requires a Bearer token.
+    # Authorization: "Bearer YOUR_ACCESS_TOKEN"
+
+  # Key/value pairs sent as the POST body (or GET query string).
+  # These depend entirely on the target API — check its network traffic.
+  payload:
+    query:  "YOUR_SEARCH_QUERY"   # e.g. a city name, keyword, or leave blank
+    page:   1                     # starting page (overridden by pagination loop)
+
+  # Path to the records list inside the API's JSON response.
+  # Example: if the response is {"data": {"results": [...]}},
+  #          set response_path to ["data", "results"].
+  response_path:
+    - "data"
+    - "results"
+
+  # Pagination settings.
+  pagination:
+    # Set to true if the API supports multi-page results.
+    enabled:    true
+    # The payload key that controls the page number (e.g. "page", "p", "offset").
+    # Only used when page_in_path is false (the default).
+    page_param: "page"
+    # Safety ceiling — the scraper will never request more than this many pages.
+    max_pages:  50
+    # Set to true if the API encodes the page number directly in the URL path
+    # rather than as a query/payload parameter. When true, include a {page}
+    # placeholder in the url field above, e.g.:
+    #   url: "https://example.com/directory/search/{page}"
+    # The scraper will substitute {page} with the current page number.
+    # page_param is ignored when page_in_path is true.
+    page_in_path: false
+
+
+# -----------------------------------------------------------------------
+# GEOGRAPHIC FILTER
+# -----------------------------------------------------------------------
+geo_filter:
+  # Set to false to skip geographic filtering entirely.
+  enabled: true
+
+  # Bounding box — only records within this box are kept.
+  # To find coordinates for any city: https://boundingbox.klokantech.com
+  # Greater New York bounding box:
+  lat_min: 40.48
+  lat_max: 40.92
+  lng_min: -74.26
+  lng_max: -73.70
+
+  # Dot-separated paths to the latitude and longitude fields in each record.
+  # For a flat record: "latitude" / "longitude"
+  # For a nested record: "coordinates.latitude" / "coordinates.longitude"
+  lat_field: "coordinates.latitude"
+  lng_field: "coordinates.longitude"
+
+
+# -----------------------------------------------------------------------
+# FIELD MAPPING
+# -----------------------------------------------------------------------
+# Maps the scraper's logical field names to the actual key names used
+# in the API's JSON records. Adjust these to match your target API.
+field_mapping:
+  id:       "id"          # unique record identifier
+  name:     "name"        # listing / record name
+  phone:    "phone"       # phone number
+  website:  "website"     # website URL
+  postcode: "post_code"   # postcode / zip code
+
+
+# -----------------------------------------------------------------------
+# OUTPUT SETTINGS
+# -----------------------------------------------------------------------
+output:
+  # Directory where all output files (Excel, log, checkpoint) are written.
+  directory: "output"
+
+  # Prefix for all output filenames.
+  # Final filename: {filename_prefix}_{YYYYMMDD}.xlsx
+  filename_prefix: "DirectoryExport"
+
+  # Value written to the "Category" column of every exported record.
+  # Examples: "Member", "Business", "Listing"
+  category: "Member"
+
+  # Value written to the "Source" column of every exported record.
+  source: "Directory Harvester"
+
+
+# -----------------------------------------------------------------------
+# VALIDATION RULES
+# -----------------------------------------------------------------------
+validation:
+  # Records with a name shorter than this will be flagged.
+  min_name_length: 3
+
+  # If true, records with no postcode are flagged.
+  require_postcode: true
+
+  # Regex pattern a postcode must match to be considered valid.
+  # Example UK pattern:  "^[A-Z]{1,2}\\d"   (e.g. SW1A, EC2, M1)
+  # Example US pattern:  "^\\d{5}"           (e.g. 10001)
+  # Leave blank to disable postcode format checking.
+  postcode_regex: ""
+
+
+# -----------------------------------------------------------------------
+# RUNTIME SETTINGS
+# -----------------------------------------------------------------------
+runtime:
+  # The scraper will save its checkpoint and exit cleanly at this time.
+  # Format: HH:MM (24-hour). Useful for scheduled daytime/overnight runs.
+  stop_at: "23:00"
+
+  # Write the checkpoint file every N records processed.
+  save_every: 10
+
+  # Log progress to the console and log file every N records processed.
+  progress_every: 10
+
+  # API request timeout in seconds.
+  request_timeout: 15
+
+  # Auto-pause if free disk space drops below this threshold (MB).
+  low_disk_mb: 500
+
+  # Auto-pause after this many consecutive processing failures.
+  max_consec_fail: 3

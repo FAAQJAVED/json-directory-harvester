@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Config and secrets — NEVER commit these
+config.yaml
+.env
+
+# Output files — these are data files, not source code
+output/
+*.xlsx
+*.log
+
+# Checkpoint files
+*_checkpoint.json
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
