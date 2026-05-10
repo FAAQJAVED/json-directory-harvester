@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.0.0] — 2025-01-01
+## [1.0.0] — 2026-05-01
 
 ### Added
 - Paginated API fetch supporting both POST and GET methods
