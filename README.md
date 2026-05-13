@@ -1,12 +1,44 @@
 # JSON Directory Harvester
 
-> A configurable, resumable Python pipeline for harvesting records from any JSON-based directory API — with geographic filtering, deduplication, data validation, and formatted three-sheet Excel export.
+**Configurable, resumable Python pipeline for harvesting records from any JSON-based directory API — geographic filtering, two-pass deduplication, data validation, and professionally formatted three-sheet Excel export. Point it at a new API with a config change. No code edits required.**
+
+> **⚠️ API access required.** This tool fetches data from an API endpoint you configure — it does not scrape HTML pages. You need an API URL that returns JSON records. See `config.yaml.example` for the full configuration reference.
 
 [![CI](https://github.com/FAAQJAVED/json-directory-harvester/actions/workflows/ci.yml/badge.svg)](https://github.com/FAAQJAVED/json-directory-harvester/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-79%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-102%20passing-brightgreen)](tests/)
+[![Coverage](https://codecov.io/gh/FAAQJAVED/json-directory-harvester/graph/badge.svg)](https://codecov.io/gh/FAAQJAVED/json-directory-harvester)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/FAAQJAVED/json-directory-harvester)
+
+---
+
+> Found this useful? A ⭐ on GitHub helps other developers find it.
+
+---
+
+## Table of Contents
+
+- [Preview](#preview)
+- [What It Does](#what-it-does)
+- [Use Cases](#use-cases)
+- [How It Works](#how-it-works)
+- [Features](#features)
+- [Performance](#performance)
+- [What Data You Get](#what-data-you-get)
+- [Quick Start](#quick-start)
+- [Configuration Reference](#configuration-reference)
+- [Output](#output)
+- [Runtime Controls](#runtime-controls)
+- [Auto-Protection Features](#auto-protection-features)
+- [Resuming a Run](#resuming-a-run)
+- [Extending](#extending)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Running Tests](#running-tests)
+- [Troubleshooting](#troubleshooting)
+- [Part of the B2B Lead Toolkit](#part-of-the-b2b-lead-toolkit)
+- [License](#license)
 
 ---
 
@@ -20,9 +52,27 @@
 
 ## What It Does
 
-JSON Directory Harvester fetches records from **any JSON-based directory API**, filters them by geographic bounding box, deduplicates them in two passes, validates each record against configurable rules, and exports the results to a professionally formatted Excel workbook.
+1. **Reads config.yaml** — one file controls the API endpoint, pagination mode, geographic bounds, field mapping, validation rules, and output format.
+2. **Fetches all records** from the configured JSON API via paginated GET or POST requests, with configurable inter-page delay and request timeout.
+3. **Filters by geography** using a lat/lng bounding box — keeps only records whose coordinates fall within the configured region.
+4. **Deduplicates in two passes** — first by unique ID field, then by Name + Postcode composite key.
+5. **Validates each record** against configurable rules (name length, postcode requirement, postcode regex, or any custom pattern).
+6. **Exports to Excel** — a styled Data sheet (clean records), a Flagged sheet (failed validation), and a Summary sheet (run statistics).
 
-Everything — the API endpoint, pagination style, field names, geo bounds, validation rules, and output format — is controlled by a single `config.yaml` file. **No source code changes are needed to point the tool at a new API.**
+Everything is config-driven. The Python source files contain zero API-specific strings — every field path, URL, and cleaning rule lives in `config.yaml`. Switching to a new directory API requires only a new config file, not a code change.
+
+---
+
+## Use Cases
+
+| Who uses it | What they do | Example config |
+|---|---|---|
+| **Property data analysts** | Harvest national directory APIs filtered to a city bounding box | `geo_filter: {enabled: true, lat_min: 51.4, lat_max: 51.6}` |
+| **Lead gen teams** | Extract and validate business records from membership directory APIs | Any B2B directory with a JSON API |
+| **Market researchers** | Pull structured datasets from industry directories for analysis | Configure once, re-run weekly for fresh data |
+| **CRM admins** | Automate nightly imports from a members or listings API into Excel | Schedule with cron or Task Scheduler |
+| **Data engineers** | Use as a lightweight ETL layer for JSON API → Excel pipelines | Extend `exporter.py` for custom output formats |
+| **Developers** | Adapt to any new JSON directory API in minutes using a new config.yaml | Copy config.yaml.example, fill in 5 fields, run |
 
 ---
 
@@ -69,20 +119,50 @@ Everything — the API endpoint, pagination style, field names, geo bounds, vali
 
 | Feature | Detail |
 |---|---|
-| **Config-driven** | API endpoint, pagination, field names, geo bounds, validation — all in `config.yaml`. Zero code changes to target a new API |
+| **Zero-code API targeting** | Point at any JSON directory API by editing config.yaml — no Python changes needed |
 | **POST and GET** | Configurable HTTP method per endpoint |
 | **Nested JSON navigation** | Dot-path `response_path` traverses any response structure: `["data", "results"]` → `response["data"]["results"]` |
-| **Two pagination modes** | `page_in_path: false` (adds page as payload param) · `page_in_path: true` (substitutes `{page}` in URL path) |
+| **Flexible pagination** | `page_in_path: false` (adds page as payload param) · `page_in_path: true` (substitutes `{page}` in URL path) |
 | **Geographic bounding-box filter** | Optional lat/lng filter — restrict output to any city, region, or country |
-| **Two-pass deduplication** | Pass 1: by record ID (richer record wins) · Pass 2: by name + postcode (case-insensitive) |
-| **Configurable validation** | Name length, postcode requirement, postcode regex — all config-driven |
-| **Three-sheet Excel export** | Data / Flagged / Summary with frozen headers, alternating row shading, and auto-width columns |
+| **Two-pass deduplication** | Pass 1: unique ID · Pass 2: Name + Postcode composite key |
+| **Configurable validation** | Name length, postcode requirement, postcode regex — all config-driven; failures go to Flagged sheet |
+| **Atomic checkpoint writes** | Write-to-temp-then-rename — checkpoint survives a crash mid-write |
+| **Three-sheet Excel export** | Data · Flagged · Summary — styled, dated, named from config |
 | **Checkpoint / resume** | Atomic JSON saves every N records — resume after any interruption with zero re-fetching |
 | **Interactive keyboard controls** | P pause · R resume · S status · Q quit — no Enter needed on any platform |
 | **Auto-protection** | Stop time · low-disk guard · consecutive-failure cap · retry queue |
 | **Rotating log file** | 5 MB cap, 3 backups — full DEBUG to file, clean INFO to console |
-| **Dry-run mode** | Reports counts without writing any files |
+| **Dry-run mode** | `--dry-run` reports record counts without writing any files |
 | **Environment variable overrides** | `SCRAPER_API_URL`, `SCRAPER_API_KEY` — secrets never in `config.yaml` |
+| **Ruff linting in CI** | Linter enforced on every push across Ubuntu, Windows, and macOS |
+| **102 pure-function tests** | Full test suite runs offline in under 3 seconds — no API key needed |
+
+---
+
+## Performance
+
+| Dataset size | Records fetched | Processing | Time |
+|---|---|---|---|
+| Small directory | 200–500 records | Geo-filter + dedup + validate | Under 2 min |
+| Medium directory | 1,000–5,000 records | Full pipeline | 5–15 min |
+| Large directory | 10,000+ records | Resumable overnight run | 1–4 hours |
+
+> Actual speed depends on the target API's response time per page. The tool adds a configurable inter-page delay (`inter_page_delay` in `runtime:`) to stay polite. Processing (filtering, dedup, validation) adds negligible overhead on top of API fetch time.
+
+---
+
+## What Data You Get
+
+| Field | Example |
+|---|---|
+| Name | Acme Property Management Ltd |
+| Phone | 0161 234 5678 |
+| Website | https://www.acme-property.co.uk |
+| Postcode | M1 1AA |
+| Category | Property Management |
+| Source | Directory API |
+
+See [`Assets/sample_output.csv`](Assets/sample_output.csv) for realistic sample output.
 
 ---
 
@@ -190,6 +270,7 @@ Maps the scraper's logical field names (`id`, `name`, `phone`, `website`, `postc
 | `request_timeout` | `15` | HTTP timeout in seconds |
 | `low_disk_mb` | `500` | Auto-pause threshold (MB free) |
 | `max_consec_fail` | `3` | Auto-pause after N consecutive failures |
+| `inter_page_delay` | `0.5` | Seconds to wait between paginated API requests |
 
 ---
 
@@ -244,6 +325,29 @@ python scraper.py --reset  # discard checkpoint and start fresh
 
 ---
 
+## Extending
+
+| Goal | Where to change |
+|---|---|
+| Add a new output column | `processor.extract_row()` and `exporter.DATA_FIELDS` |
+| Add a new validation rule | `processor.validate_row()` |
+| Add a new field normaliser | New function in `processor.py` alongside `strip_html()` |
+| Support a new auth scheme | `config._apply_env_overrides()` |
+| Add a new runtime protection | Top of Phase 2 loop in `scraper.py` |
+
+---
+
+## Tech Stack
+
+| Library | Role |
+|---|---|
+| `requests` | HTTP GET/POST to the configured API endpoint |
+| `pyyaml` | YAML config loading |
+| `openpyxl` | Three-sheet Excel output (Data · Flagged · Summary) |
+| `python-dotenv` | Optional — loads `SCRAPER_API_URL` and `SCRAPER_API_KEY` from `.env` |
+
+---
+
 ## Project Structure
 
 ```
@@ -265,12 +369,15 @@ json-directory-harvester/
 ├── LICENSE               # MIT
 ├── Assets/
 │   ├── terminal_progress.png   # Screenshot — live progress bar
-│   └── output_preview.png      # Screenshot — Excel output (three sheets)
+│   ├── output_preview.png      # Screenshot — Excel output (three sheets)
+│   └── sample_output.csv       # Sample output rows for reference
 └── tests/
     ├── __init__.py
     ├── test_processor.py  # 44 tests — all pure functions
     ├── test_fetcher.py    # 20 tests — mocked HTTP, both pagination modes
-    └── test_checkpoint.py # 15 tests — save/load/clear/atomic write
+    ├── test_checkpoint.py # 15 tests — save/load/clear/atomic write
+    ├── test_config.py     # 12 tests — load_config, env overrides, validation
+    └── test_exporter.py   # 11 tests — schema constants, Excel file generation
 ```
 
 ---
@@ -282,17 +389,7 @@ pip install -r requirements-dev.txt
 pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
----
-
-## Extending
-
-| Goal | Where to change |
-|---|---|
-| Add a new output column | `processor.extract_row()` and `exporter.DATA_FIELDS` |
-| Add a new validation rule | `processor.validate_row()` |
-| Add a new field normaliser | New function in `processor.py` alongside `strip_html()` |
-| Support a new auth scheme | `config._apply_env_overrides()` |
-| Add a new runtime protection | Top of Phase 2 loop in `scraper.py` |
+102 tests. No API key required. Full suite runs offline in under 3 seconds.
 
 ---
 
@@ -308,17 +405,65 @@ See `requirements.txt` for pinned minimum versions.
 
 ---
 
+## Troubleshooting
+
+**"Config file not found: config.yaml"**
+
+Copy the annotated example: `cp config.yaml.example config.yaml`
+Then open it and replace all `YOUR_*` placeholder values.
+
+---
+
+**API returning zero records**
+
+Wrong `response_path`. Open browser DevTools → Network tab → find the API call → inspect the JSON structure. If records are at `{"data": {"results": [...]}}`, set `response_path: ["data", "results"]`. Use `--dry-run` first to confirm counts.
+
+---
+
+**Checkpoint not resuming**
+
+Re-run `python scraper.py` — checkpoint is detected automatically.
+To start fresh: `python scraper.py --reset`
+
+---
+
+**Excel output locked / PermissionError**
+
+Close the previous output file in Excel before running. Excel holds an exclusive lock on open `.xlsx` files.
+
+---
+
+**Keyboard controls not responding on macOS**
+
+macOS requires Accessibility permissions for raw keypress reading.
+System Settings → Privacy & Security → Accessibility → add your terminal app.
+Restart the terminal after granting permission.
+
+---
+
+**Inter-page delay too fast — API is rate-limiting**
+
+Increase `inter_page_delay` in your `config.yaml` under `runtime:`.
+Default is 0.5 seconds. For strict APIs, try 2.0 or higher:
+
+```yaml
+runtime:
+  inter_page_delay: 2.0
+```
+
+---
+
 ## Part of the B2B Lead Toolkit
 
 This tool is one component of a broader B2B lead generation pipeline targeting UK property management companies, letting agents, block managers, and HMO landlords.
 
 | Repo | What it does |
 |---|---|
-| **[JSON Directory Harvester](https://github.com/FAAQJAVED/json-directory-harvester)** ← *you are here* | Harvests records from any JSON-based directory API |
+| **[JSON Directory Harvester](https://github.com/FAAQJAVED/json-directory-harvester)** ← *you are here* | Configurable harvester for any JSON directory API |
 | **[Google Maps Business Scraper](https://github.com/FAAQJAVED/Google-Maps-Business-Scraper)** | Extracts and enriches business listings from Google Maps |
-| **[Email Phone Enrichment Tool](https://github.com/FAAQJAVED/Email-Phone-Number-Enrichment-Tool)** | Scrapes contact emails and phones from company websites |
+| **[Email Phone Enrichment Tool](https://github.com/FAAQJAVED/Email-Phone-Number-Enrichment-Tool)** | Converts a website list into a verified email + phone database |
 | **[LeadHunter Pro](https://github.com/FAAQJAVED/Leadhunter_Pro)** | Multi-engine search scraper with HOT/WARM/COLD lead scoring |
-| **[Trustpilot Business Scraper](https://github.com/FAAQJAVED/trustpilot-business-scraper)** | Extracts business listings from Trustpilot search results |
+| **[Trustpilot Business Scraper](https://github.com/FAAQJAVED/trustpilot-business-scraper)** | Extracts business contact data from Trustpilot search results |
 
 All five tools share the same Excel output schema (Data + Summary sheets) — results can be combined directly in Excel or imported together into a CRM.
 
@@ -326,4 +471,4 @@ All five tools share the same Excel output schema (Data + Summary sheets) — re
 
 ## License
 
-MIT © 2026 [FAAQJAVED](https://github.com/FAAQJAVED)
+MIT © 2026 [FAAQJAVED](https://github.com/FAAQJAVED) — see [LICENSE](LICENSE)
