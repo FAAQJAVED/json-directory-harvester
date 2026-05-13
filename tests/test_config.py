@@ -7,6 +7,7 @@ All tests are pure-function or use tmp_path for isolation.
 No network calls. Full suite runs in under 1 second.
 """
 
+import re
 import pytest
 from pathlib import Path
 from config import load_config
@@ -73,7 +74,11 @@ class TestFileNotFound:
 class TestMissingRequiredSections:
 
     def test_raises_when_api_missing(self, tmp_path):
-        content = MINIMAL_VALID_CONFIG.replace("api:\n", "")
+        # Strip the entire api: block (header + all indented children).
+        # A simple .replace("api:\n", "") only removes the header line and
+        # leaves the indented children orphaned at the top of the file,
+        # producing invalid YAML before load_config can check for the key.
+        content = re.sub(r'^api:\n(?:[ \t]+[^\n]*\n)*', '', MINIMAL_VALID_CONFIG, flags=re.MULTILINE)
         path = _write_config(tmp_path, content)
         with pytest.raises(ValueError, match="missing required"):
             load_config(path)
