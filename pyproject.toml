@@ -32,3 +32,9 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["F401", "F811"]
+
+[project.urls]
+Homepage   = "https://github.com/FAAQJAVED/json-directory-harvester"
+Repository = "https://github.com/FAAQJAVED/json-directory-harvester"
+Issues     = "https://github.com/FAAQJAVED/json-directory-harvester/issues"
+Changelog  = "https://github.com/FAAQJAVED/json-directory-harvester/blob/main/CHANGELOG.md"
