@@ -153,3 +153,7 @@ runtime:
 
   # Auto-pause after this many consecutive processing failures.
   max_consec_fail: 3
+
+  # Courtesy delay between paginated API requests (seconds).
+  # Increase if the target API rate-limits aggressive pagination.
+  inter_page_delay: 0.5
