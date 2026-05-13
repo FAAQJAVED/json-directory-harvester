@@ -84,22 +84,22 @@ class TestMissingRequiredSections:
             load_config(path)
 
     def test_raises_when_output_missing(self, tmp_path):
-        lines = [l for l in MINIMAL_VALID_CONFIG.splitlines()
-                 if not l.startswith("output:")]
+        lines = [line for line in MINIMAL_VALID_CONFIG.splitlines()
+                 if not line.startswith("output:")]
         path = _write_config(tmp_path, "\n".join(lines))
         with pytest.raises(ValueError, match="missing required"):
             load_config(path)
 
     def test_raises_when_runtime_missing(self, tmp_path):
-        lines = [l for l in MINIMAL_VALID_CONFIG.splitlines()
-                 if not l.startswith("runtime:")]
+        lines = [line for line in MINIMAL_VALID_CONFIG.splitlines()
+                 if not line.startswith("runtime:")]
         path = _write_config(tmp_path, "\n".join(lines))
         with pytest.raises(ValueError, match="missing required"):
             load_config(path)
 
     def test_raises_when_field_mapping_missing(self, tmp_path):
-        lines = [l for l in MINIMAL_VALID_CONFIG.splitlines()
-                 if not l.startswith("field_mapping:")]
+        lines = [line for line in MINIMAL_VALID_CONFIG.splitlines()
+                 if not line.startswith("field_mapping:")]
         path = _write_config(tmp_path, "\n".join(lines))
         with pytest.raises(ValueError, match="missing required"):
             load_config(path)
