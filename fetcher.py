@@ -23,9 +23,8 @@ import requests
 log = logging.getLogger(__name__)
 
 # Courtesy delay between paginated requests (seconds).
-# Keeps request rate polite toward the target server.
-# To make this configurable, add inter_page_delay to runtime: in config.yaml.
-_INTER_PAGE_DELAY = 0.5
+# Configurable via runtime.inter_page_delay in config.yaml (default: 0.5).
+_INTER_PAGE_DELAY_DEFAULT = 0.5
 
 
 def fetch_all_records(config: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -63,6 +62,7 @@ def fetch_all_records(config: Dict[str, Any]) -> List[Dict[str, Any]]:
     headers       = api_cfg.get("headers", {})
     base_payload  = dict(api_cfg.get("payload", {}))
     timeout       = runtime_cfg.get("request_timeout", 15)
+    inter_page_delay = runtime_cfg.get("inter_page_delay", _INTER_PAGE_DELAY_DEFAULT)
     response_path : List[str] = api_cfg.get("response_path", [])
 
     pagination_cfg     = api_cfg.get("pagination", {})
@@ -128,7 +128,7 @@ def fetch_all_records(config: Dict[str, Any]) -> List[Dict[str, Any]]:
             break
 
         page += 1
-        time.sleep(_INTER_PAGE_DELAY)
+        time.sleep(inter_page_delay)
 
     log.info("Total records fetched across all pages: %d", len(all_records))
     return all_records
