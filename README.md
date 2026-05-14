@@ -8,7 +8,6 @@
 [![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-102%20passing-brightgreen)](tests/)
-[![Coverage](https://codecov.io/gh/FAAQJAVED/json-directory-harvester/graph/badge.svg)](https://codecov.io/gh/FAAQJAVED/json-directory-harvester)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/FAAQJAVED/json-directory-harvester)
 
 ---
